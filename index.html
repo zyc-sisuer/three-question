@@ -1,0 +1,325 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>宿舍床尺寸 · 一页页翻给你看</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='22' fill='%230d1b2e'/><text x='50' y='68' font-size='60' text-anchor='middle' fill='%234fc3f7'>尺</text></svg>">
+<link rel="stylesheet" href="https://miaoda.feishu.cn/fonts/css2?family=Noto+Sans+SC:wght@400;500;700;900&family=Noto+Serif+SC:wght@600;700;900&display=swap">
+<style>
+  :root{
+    --ink:#eaf4ff;
+    --ink-dim:rgba(234,244,255,.72);
+  }
+  *{margin:0;padding:0;box-sizing:border-box;}
+  html,body{height:100%;overflow:hidden;}
+  body{
+    font-family:'Noto Sans SC',-apple-system,BlinkMacSystemFont,'Segoe UI','PingFang SC','Microsoft YaHei',sans-serif;
+    background:#05070d;color:var(--ink);-webkit-font-smoothing:antialiased;
+  }
+
+  /* ===== 舞台：三页层叠，翻页切换 ===== */
+  .stage{position:fixed;inset:0;perspective:1400px;}
+  .page{
+    position:absolute;inset:0;overflow:hidden;
+    display:flex;flex-direction:column;align-items:center;justify-content:center;
+    padding:5vh 6vw;text-align:center;
+    opacity:0;visibility:hidden;
+    transform:translateX(0) rotateY(0);
+    transition:opacity .6s ease,transform .7s cubic-bezier(.65,.05,.3,1),visibility .6s;
+  }
+  .page.active{opacity:1;visibility:visible;transform:translateX(0) rotateY(0);z-index:5;}
+  .page.exit-left{transform:translateX(-46vw) rotateY(28deg) scale(.92);opacity:0;z-index:2;}
+  .page.enter-right{transform:translateX(46vw) rotateY(-28deg) scale(.92);opacity:0;}
+
+  /* ===== 底部操作区 ===== */
+  .controls{
+    position:fixed;left:0;right:0;bottom:0;z-index:60;
+    display:flex;align-items:center;justify-content:center;gap:18px;padding:22px 0 26px;
+  }
+  .dots{display:flex;gap:6px;}
+  .dot{
+    width:44px;height:44px;border-radius:50%;
+    background:transparent;cursor:pointer;border:none;
+    display:flex;align-items:center;justify-content:center;
+  }
+  .dot::before{
+    content:'';width:10px;height:10px;border-radius:50%;
+    background:rgba(255,255,255,.22);transition:all .35s;
+  }
+  .dot.on::before{background:#fff;transform:scale(1.35);}
+  .navbtn{
+    font-family:inherit;font-weight:700;font-size:15px;letter-spacing:.12em;
+    padding:12px 30px;border-radius:999px;cursor:pointer;color:#fff;
+    background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.28);
+    backdrop-filter:blur(10px);transition:all .3s;
+  }
+  .navbtn:hover{background:rgba(255,255,255,.18);transform:translateY(-2px);}
+  .counter{
+    position:fixed;top:22px;right:26px;z-index:60;
+    font-family:'Noto Serif SC',serif;font-weight:700;font-size:15px;letter-spacing:.15em;
+    color:rgba(255,255,255,.6);
+  }
+
+  /* ===== 通用飞入片段 ===== */
+  .seg{display:inline-block;will-change:transform,opacity;}
+  .segAnim{animation:segIn .7s cubic-bezier(.2,.9,.3,1.2) both;}
+
+  /* 文案基础排印 */
+  .kicker{font-size:13px;letter-spacing:.5em;text-transform:uppercase;opacity:.85;margin-bottom:16px;font-weight:500;}
+  .big{font-family:'Noto Sans SC',sans-serif;font-weight:900;line-height:1.14;}
+  .sub{font-size:clamp(16px,2.4vw,21px);font-weight:500;color:var(--ink-dim);line-height:1.9;margin-top:26px;max-width:44em;}
+  .tag{display:inline-flex;align-items:center;gap:10px;margin-top:40px;font-size:14px;letter-spacing:.3em;color:rgba(255,255,255,.75);}
+
+  /* ===== 第 1 页：深蓝星空 + 电光青 ===== */
+  .p1{background:#050d1f;}
+  .bg1{position:absolute;inset:0;background:
+      radial-gradient(120% 90% at 20% 10%,rgba(20,52,120,.9) 0%,transparent 55%),
+      radial-gradient(100% 90% at 85% 90%,rgba(0,140,200,.28) 0%,transparent 55%),
+      linear-gradient(180deg,#050d1f 0%,#07162e 100%);}
+  .bg1 .star{position:absolute;border-radius:50%;background:#fff;animation:twinkle var(--t,3s) ease-in-out infinite;}
+  .bg1 .orb{position:absolute;border-radius:50%;filter:blur(70px);opacity:.5;mix-blend-mode:screen;animation:drift 14s ease-in-out infinite;}
+  @keyframes twinkle{0%,100%{opacity:.15}50%{opacity:.9}}
+  @keyframes drift{0%,100%{transform:translate(0,0)}33%{transform:translate(40px,-30px)}66%{transform:translate(-25px,25px)}}
+  .p1 .kicker{color:#7fd6ff;}
+  .p1 .big{
+    font-size:clamp(40px,8.6vw,92px);
+    background:linear-gradient(120deg,#eaf6ff 10%,#4fc3f7 45%,#9be7ff 70%,#4fc3f7 95%);
+    -webkit-background-clip:text;background-clip:text;color:transparent;
+    text-shadow:0 0 42px rgba(79,195,247,.35);
+    position:relative;
+  }
+  .p1 .big::before{
+    content:attr(data-text);position:absolute;left:0;top:0;z-index:-1;
+    filter:blur(16px);opacity:.45;transform:translate(3px,6px) skewX(-4deg);
+    background:linear-gradient(120deg,#4fc3f7,#7fd6ff);-webkit-background-clip:text;background-clip:text;color:transparent;
+  }
+  .p1 .mid{
+    margin-top:14px;font-family:'Noto Serif SC',serif;font-weight:700;
+    font-size:clamp(26px,5vw,48px);color:#d8f4ff;letter-spacing:.04em;
+  }
+  /* 第 1 页飞入：左右交错 + 模糊进场 */
+  @keyframes flyL{from{transform:translateX(-60px);opacity:0;filter:blur(8px)}to{transform:none;opacity:1;filter:blur(0)}}
+  @keyframes flyR{from{transform:translateX(60px);opacity:0;filter:blur(8px)}to{transform:none;opacity:1;filter:blur(0)}}
+  .p1 .segAnim:nth-of-type(odd){animation-name:flyL;}
+  .p1 .segAnim:nth-of-type(even){animation-name:flyR;}
+
+  /* ===== 第 2 页：极光弥散 + 紫晶 ===== */
+  .p2{background:#0a0717;}
+  .bg2{position:absolute;inset:0;background:linear-gradient(180deg,#0a0717,#1a0f33);}
+  .bg2 .aur{position:absolute;border-radius:50%;filter:blur(80px);opacity:.55;mix-blend-mode:screen;animation:aurora 12s ease-in-out infinite;}
+  .bg2 .sweep{position:absolute;inset:0;background:linear-gradient(115deg,transparent 30%,rgba(178,120,255,.10) 50%,transparent 70%);background-size:220% 100%;animation:sweep 7s linear infinite;}
+  @keyframes aurora{0%,100%{transform:translate(0,0) scale(1)}50%{transform:translate(-30px,40px) scale(1.15)}}
+  @keyframes sweep{0%{background-position:120% 0}100%{background-position:-120% 0}}
+  .p2 .kicker{color:#d8a9ff;}
+  .p2 .big{
+    font-size:clamp(44px,9vw,100px);position:relative;line-height:1.05;
+    background:linear-gradient(120deg,#fff 5%,#c88bff 35%,#f0c0ff 55%,#9c6bff 80%);
+    -webkit-background-clip:text;background-clip:text;color:transparent;
+  }
+  .p2 .big .outline{
+    position:absolute;inset:0;z-index:-1;display:flex;justify-content:center;
+    color:transparent;-webkit-text-stroke:2px rgba(200,139,255,.4);
+    transform:translate(4px,6px);
+  }
+  .p2 .mid{
+    margin-top:14px;font-family:'Noto Serif SC',serif;font-weight:900;
+    font-size:clamp(26px,5vw,46px);letter-spacing:.06em;
+    background:linear-gradient(180deg,#fff,#cfa9ff);-webkit-background-clip:text;background-clip:text;color:transparent;
+  }
+  /* 第 2 页飞入：逐字放大弹入 */
+  @keyframes pop{0%{transform:scale(.2);opacity:0}60%{transform:scale(1.12);opacity:1}100%{transform:scale(1);opacity:1}}
+
+  /* ===== 第 3 页：流光海浪 + 琥珀 ===== */
+  .p3{background:#120d08;}
+  .bg3{position:absolute;inset:0;background:linear-gradient(180deg,#120d08,#2a1a0c);}
+  .bg3 .wave{position:absolute;left:-10%;width:120%;fill:none;stroke-linecap:round;opacity:.5;}
+  .bg3 .w1{stroke:#ff9d4d;stroke-width:34;filter:blur(22px);animation:waveMove 9s ease-in-out infinite;}
+  .bg3 .w2{stroke:#ffc07a;stroke-width:16;opacity:.35;animation:waveMove 7s ease-in-out infinite reverse;}
+  .bg3 .w3{stroke:#e66b2f;stroke-width:26;filter:blur(10px);opacity:.3;animation:waveMove 11s ease-in-out infinite;}
+  @keyframes waveMove{0%,100%{transform:translateY(0)}50%{transform:translateY(-26px)}}
+  .p3 .kicker{color:#ffb066;position:relative;z-index:2;}
+  .p3 .big{
+    font-size:clamp(42px,8.4vw,88px);font-weight:900;
+    position:relative;z-index:2;
+    background:linear-gradient(120deg,#fff 5%,#ffc88a 40%,#ff9d4d 70%,#fff 100%);
+    -webkit-background-clip:text;background-clip:text;color:transparent;
+    text-shadow:0 10px 40px rgba(255,157,77,.25);
+  }
+  .p3 .mid{
+    margin-top:14px;font-family:'Noto Serif SC',serif;font-weight:700;
+    font-size:clamp(26px,5vw,46px);color:#ffe3c4;letter-spacing:.05em;
+    position:relative;z-index:2;
+  }
+  .p3 .sub, .p3 .tag{position:relative;z-index:2;}
+  /* 第 3 页飞入：自上而下坠落回弹 */
+  @keyframes drop{0%{transform:translateY(-70px);opacity:0}55%{transform:translateY(6px);opacity:1}78%{transform:translateY(-4px)}100%{transform:translateY(0);opacity:1}}
+
+  /* ===== 页脚提示 ===== */
+  .hint{
+    position:fixed;bottom:100px;left:0;right:0;text-align:center;z-index:50;
+    font-size:13px;letter-spacing:.35em;color:rgba(255,255,255,.4);
+  }
+
+  /* ===== 响应式 ===== */
+  @media(max-width:560px){
+    .page{padding:6vh 7vw;}
+    .sub{margin-top:20px;}
+    .tag{margin-top:30px;letter-spacing:.18em;font-size:13px;}
+    .controls{padding-bottom:20px;}
+  }
+
+  @media (prefers-reduced-motion:reduce){
+    *,*::before,*::after{animation:none!important;transition:none!important;}
+    .seg{opacity:1!important;transform:none!important;}
+    .page{transition:none!important;}
+  }
+</style>
+</head>
+<body>
+
+<div class="stage">
+  <!-- ===== 第 1 页 ===== -->
+  <section class="page p1 active" data-page="0">
+    <div class="bg1">
+      <span class="orb" style="top:12%;left:8%;width:200px;height:200px;background:#1b4f9c"></span>
+      <span class="orb" style="top:60%;left:70%;width:260px;height:260px;background:#0aa3c4"></span>
+    </div>
+    <div class="kicker">NEW STUDENT · 开学第一问</div>
+    <h1 class="big" data-text="宿舍的床，到底多大？">宿舍的床，到底多大？</h1>
+    <div class="mid">蚊帐 · 床帘 · 尺寸之谜</div>
+    <div class="sub">
+      <span class="seg">长宽高，差之毫厘，</span>
+      <span class="seg">蚊帐床帘便安不进去。</span>
+      <span class="seg">买错的规格，</span>
+      <span class="seg">只能退货，再买，</span>
+      <span class="seg">来回折腾。</span>
+    </div>
+    <div class="tag"><span class="dot-arrow">→</span>点击「下一页」翻开答案</div>
+  </section>
+
+  <!-- ===== 第 2 页 ===== -->
+  <section class="page p2" data-page="1">
+    <div class="bg2">
+      <span class="aur" style="top:6%;left:10%;width:300px;height:300px;background:#6a3fd0"></span>
+      <span class="aur" style="top:55%;right:5%;width:320px;height:320px;background:#c35bd1"></span>
+      <span class="aur" style="bottom:-10%;left:35%;width:360px;height:360px;background:#3f7fd0"></span>
+      <div class="sweep"></div>
+    </div>
+    <div class="kicker">THE FIX · 一个输入，立见分晓</div>
+    <h1 class="big"><span class="outline" aria-hidden="true">量好长宽高</span>量好长宽高</h1>
+    <div class="mid">长 × 宽 × 高</div>
+    <div class="sub">
+      <span class="seg">拿出尺子，</span>
+      <span class="seg">量清床的三个尺寸，</span>
+      <span class="seg">输入方框，</span>
+      <span class="seg">立刻知道</span>
+      <span class="seg">放得进 · 放不进。</span>
+    </div>
+    <div class="tag"><span class="dot-arrow">→</span>一步到位，免去退换</div>
+  </section>
+
+  <!-- ===== 第 3 页 ===== -->
+  <section class="page p3" data-page="2">
+    <div class="bg3">
+      <svg class="wave w1" viewBox="0 0 1200 600" preserveAspectRatio="none" style="top:8%">
+        <path d="M0,300 C150,180 350,420 600,300 C850,180 1050,420 1200,300 L1200,600 L0,600 Z"/>
+      </svg>
+      <svg class="wave w3" viewBox="0 0 1200 600" preserveAspectRatio="none" style="top:30%">
+        <path d="M0,300 C150,420 350,180 600,300 C850,420 1050,180 1200,300 L1200,600 L0,600 Z"/>
+      </svg>
+      <svg class="wave w2" viewBox="0 0 1200 600" preserveAspectRatio="none" style="top:55%">
+        <path d="M0,300 C150,180 350,420 600,300 C850,180 1050,420 1200,300 L1200,600 L0,600 Z"/>
+      </svg>
+    </div>
+    <div class="kicker">LOOK AHEAD · 更聪明的判断</div>
+    <h1 class="big">尺寸对得上，住得省心</h1>
+    <div class="mid">装得顺手 · 不再退换</div>
+    <div class="sub">
+      <span class="seg">未来加入智能体，</span>
+      <span class="seg">用更形象生动的方式，</span>
+      <span class="seg">告诉你这床到底多大；</span>
+      <span class="seg">告别退换，</span>
+      <span class="seg">从量好尺寸开始。</span>
+    </div>
+    <div class="tag"><span class="dot-arrow">→</span>翻回第一页，再看看起点</div>
+  </section>
+</div>
+
+<div class="hint">点击按钮翻页 · 三页三种风</div>
+
+<div class="controls">
+  <button class="dot" data-goto="0" aria-label="第 1 页"></button>
+  <button class="dot" data-goto="1" aria-label="第 2 页"></button>
+  <button class="dot" data-goto="2" aria-label="第 3 页"></button>
+  <button class="navbtn" id="nextBtn">下一页</button>
+</div>
+
+<div class="counter" id="counter">01 / 03</div>
+
+<script>
+  const pages=[...document.querySelectorAll('.page')];
+  const dots=[...document.querySelectorAll('.dot')];
+  const counter=document.getElementById('counter');
+  const nextBtn=document.getElementById('nextBtn');
+  let cur=0;
+
+  function stars(){
+    const bg=document.querySelector('.bg1');
+    for(let i=0;i<70;i++){
+      const s=document.createElement('span');
+      s.className='star';
+      const sz=Math.random()*2+1;
+      s.style.cssText=`width:${sz}px;height:${sz}px;left:${Math.random()*100}%;top:${Math.random()*100}%;--t:${(Math.random()*3+2).toFixed(1)}s;animation-delay:${(Math.random()*3).toFixed(1)}s`;
+      bg.appendChild(s);
+    }
+  }
+  stars();
+
+  function clearSegs(p){
+    p.querySelectorAll('.seg').forEach(s=>{
+      s.classList.remove('segAnim');
+      s.style.animationDelay='0s';
+    });
+  }
+
+  function animateSegs(p){
+    const segs=p.querySelectorAll('.seg');
+    segs.forEach((s,i)=>{
+      s.classList.add('segAnim');
+      s.style.animationDelay=(0.15+i*0.28)+'s';
+    });
+  }
+
+  function go(n,dir){
+    if(n===cur)return;
+    const old=pages[cur], next=pages[n];
+    clearSegs(old);clearSegs(next);
+    old.classList.remove('active','enter-right');
+    old.classList.add(dir===-1?'enter-right':'exit-left');
+    next.classList.remove('exit-left','enter-right');
+    next.classList.add('active');
+    cur=n;
+    dots.forEach((d,i)=>d.classList.toggle('on',i===cur));
+    counter.textContent=String(cur+1).padStart(2,'0')+' / 03';
+    setTimeout(()=>{animateSegs(next);},90);
+  }
+
+  function next(){
+    const n=(cur+1)%3;
+    go(n,1);
+    nextBtn.textContent=(cur===2)?'回到起点':'下一页';
+  }
+
+  nextBtn.addEventListener('click',next);
+  dots.forEach(d=>d.addEventListener('click',()=>go(+d.dataset.goto,+d.dataset.goto>cur?1:-1)));
+  document.addEventListener('keydown',e=>{
+    if(e.key==='ArrowRight')next();
+    if(e.key==='ArrowLeft')go(cur===0?2:cur-1,-1);
+  });
+
+  // 首屏进入动画
+  setTimeout(()=>animateSegs(pages[0]),200);
+</script>
+</body>
+</html>
